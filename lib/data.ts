@@ -58,6 +58,25 @@ export async function updateYearProcesses(
   await updateDoc(doc(db, "years", yearId), { processes });
 }
 
+// 年度を、配下の選手・記録・メモごとすべて削除する
+export async function deleteYear(yearId: string): Promise<void> {
+  const participants = await listParticipants(yearId);
+  for (const p of participants) {
+    const [records, memos] = await Promise.all([
+      getDocs(recordsCol(yearId, p.id)),
+      getDocs(memosCol(yearId, p.id)),
+    ]);
+    for (const r of records.docs) {
+      await deleteDoc(r.ref);
+    }
+    for (const m of memos.docs) {
+      await deleteDoc(m.ref);
+    }
+    await deleteDoc(doc(db, "years", yearId, "participants", p.id));
+  }
+  await deleteDoc(doc(db, "years", yearId));
+}
+
 export async function getCurrentYearId(): Promise<string | null> {
   const snap = await getDoc(SETTINGS_DOC);
   if (!snap.exists()) return null;

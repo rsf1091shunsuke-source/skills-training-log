@@ -7,6 +7,7 @@ import {
   copyParticipantsFromYear,
   createYear,
   deleteParticipant,
+  deleteYear,
   getCurrentYearId,
   listParticipants,
   listYears,
@@ -72,6 +73,28 @@ export default function AdminHome() {
     }
   }
 
+  async function handleDeleteYear(y: YearDoc) {
+    const first = window.confirm(
+      `年度「${y.label}」を削除しますか?中の選手・記録・メモがすべて削除されます。この操作は取り消せません。`
+    );
+    if (!first) return;
+    const second = window.confirm(
+      `本当によろしいですか?「${y.label}」のデータはもう復元できません。`
+    );
+    if (!second) return;
+
+    setBusy(true);
+    try {
+      await deleteYear(y.id);
+      const remaining = years.filter((yy) => yy.id !== y.id);
+      const nextId = remaining[0]?.id ?? "";
+      if (nextId) await setCurrentYearId(nextId);
+      await reloadYears();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleAddParticipant(e: React.FormEvent) {
     e.preventDefault();
     if (!newName.trim() || !currentYearId) return;
@@ -122,18 +145,37 @@ export default function AdminHome() {
       <SumiLine label="年度" />
       <div className="flex flex-wrap items-center gap-2 mb-6">
         {years.map((y) => (
-          <button
+          <div
             key={y.id}
-            onClick={() => handleSwitchYear(y.id)}
-            disabled={busy}
-            className={`px-3 py-1.5 rounded text-sm border transition-colors ${
+            className={`flex items-center rounded overflow-hidden border transition-colors ${
               y.id === currentYearId
-                ? "bg-ink text-paper border-ink"
-                : "border-ink/20 text-ink-soft hover:border-wood"
+                ? "bg-ink border-ink"
+                : "border-ink/20 hover:border-wood"
             }`}
           >
-            {y.label}
-          </button>
+            <button
+              onClick={() => handleSwitchYear(y.id)}
+              disabled={busy}
+              className={`px-3 py-1.5 text-sm ${
+                y.id === currentYearId ? "text-paper" : "text-ink-soft"
+              }`}
+            >
+              {y.label}
+            </button>
+            <button
+              onClick={() => handleDeleteYear(y)}
+              disabled={busy}
+              aria-label={`年度「${y.label}」を削除`}
+              title="この年度を削除"
+              className={`px-2 py-1.5 text-xs ${
+                y.id === currentYearId
+                  ? "text-paper/60 hover:text-chalk"
+                  : "text-ink-soft/50 hover:text-chalk"
+              }`}
+            >
+              ×
+            </button>
+          </div>
         ))}
       </div>
       <form onSubmit={handleCreateYear} className="flex flex-wrap gap-2 mb-10 items-center">
