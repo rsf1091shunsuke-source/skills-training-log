@@ -116,6 +116,18 @@ export async function deleteParticipant(
   await deleteDoc(doc(db, "years", yearId, "participants", participantId));
 }
 
+// 別の年度から選手一覧をコピーする(記録・メモはコピーしない、名簿のみ)
+export async function copyParticipantsFromYear(
+  fromYearId: string,
+  toYearId: string
+): Promise<number> {
+  const source = await listParticipants(fromYearId);
+  for (const p of source) {
+    await addParticipant(toYearId, p.name, p.order);
+  }
+  return source.length;
+}
+
 // ---------- 記録(本番形式:1日目/2日目) ----------
 
 export function recordsCol(yearId: string, participantId: string) {

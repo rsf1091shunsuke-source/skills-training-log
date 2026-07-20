@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   addParticipant,
+  copyParticipantsFromYear,
   createYear,
   deleteParticipant,
   getCurrentYearId,
@@ -21,6 +22,7 @@ export default function AdminHome() {
   const [participants, setParticipants] = useState<Participant[]>([]);
   const [newName, setNewName] = useState("");
   const [newYearLabel, setNewYearLabel] = useState("");
+  const [copySourceYearId, setCopySourceYearId] = useState("");
   const [busy, setBusy] = useState(false);
 
   async function reloadYears() {
@@ -49,6 +51,9 @@ export default function AdminHome() {
     setBusy(true);
     try {
       const id = await createYear(newYearLabel.trim());
+      if (copySourceYearId) {
+        await copyParticipantsFromYear(copySourceYearId, id);
+      }
       await setCurrentYearId(id);
       setNewYearLabel("");
       await reloadYears();
@@ -94,6 +99,24 @@ export default function AdminHome() {
     await reloadParticipants(currentYearId);
   }
 
+  async function handleCopyParticipants() {
+    if (!copySourceYearId || !currentYearId) return;
+    const sourceLabel = years.find((y) => y.id === copySourceYearId)?.label;
+    if (
+      !window.confirm(
+        `「${sourceLabel}」の選手一覧を、この年度にコピーします。同じ名前が既にいても重複して追加されます。よろしいですか?`
+      )
+    )
+      return;
+    setBusy(true);
+    try {
+      await copyParticipantsFromYear(copySourceYearId, currentYearId);
+      await reloadParticipants(currentYearId);
+    } finally {
+      setBusy(false);
+    }
+  }
+
   return (
     <div>
       <SumiLine label="年度" />
@@ -113,13 +136,27 @@ export default function AdminHome() {
           </button>
         ))}
       </div>
-      <form onSubmit={handleCreateYear} className="flex gap-2 mb-10">
+      <form onSubmit={handleCreateYear} className="flex flex-wrap gap-2 mb-10 items-center">
         <input
           value={newYearLabel}
           onChange={(e) => setNewYearLabel(e.target.value)}
           placeholder="例: 2027年度"
           className="border border-ink/20 rounded px-3 py-1.5 text-sm bg-white flex-1 max-w-xs"
         />
+        {years.length > 0 && (
+          <select
+            value={copySourceYearId}
+            onChange={(e) => setCopySourceYearId(e.target.value)}
+            className="border border-ink/20 rounded px-2 py-1.5 text-sm bg-white"
+          >
+            <option value="">選手はコピーしない</option>
+            {years.map((y) => (
+              <option key={y.id} value={y.id}>
+                「{y.label}」の選手をコピー
+              </option>
+            ))}
+          </select>
+        )}
         <button
           disabled={busy}
           className="px-4 py-1.5 rounded text-sm bg-wood-dark text-paper hover:bg-ink transition-colors"
@@ -146,6 +183,33 @@ export default function AdminHome() {
       )}
 
       <SumiLine label={`選手一覧(${participants.length}名)`} />
+
+      {years.length > 1 && (
+        <div className="flex flex-wrap items-center gap-2 mb-4 text-sm">
+          <span className="text-ink-soft">他の年度から選手をコピー:</span>
+          <select
+            value={copySourceYearId}
+            onChange={(e) => setCopySourceYearId(e.target.value)}
+            className="border border-ink/20 rounded px-2 py-1 bg-white"
+          >
+            <option value="">年度を選択</option>
+            {years
+              .filter((y) => y.id !== currentYearId)
+              .map((y) => (
+                <option key={y.id} value={y.id}>
+                  {y.label}
+                </option>
+              ))}
+          </select>
+          <button
+            onClick={handleCopyParticipants}
+            disabled={!copySourceYearId || busy}
+            className="px-3 py-1 rounded border border-ink/20 text-ink-soft hover:border-wood hover:text-ink transition-colors disabled:opacity-40"
+          >
+            コピー
+          </button>
+        </div>
+      )}
 
       <form onSubmit={handleAddParticipant} className="flex gap-2 mb-6">
         <input
