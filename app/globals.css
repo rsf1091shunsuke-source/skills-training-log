@@ -1,0 +1,81 @@
+@import "tailwindcss";
+
+@theme {
+  --font-display: "Shippori Mincho", serif;
+  --font-body: "Zen Kaku Gothic New", sans-serif;
+
+  --color-paper: #ece4d0;
+  --color-paper-dark: #ddd2b6;
+  --color-ink: #1c1917;
+  --color-ink-soft: #3a3532;
+  --color-wood: #a97c50;
+  --color-wood-dark: #7a5636;
+  --color-wood-light: #d9b98a;
+  --color-chalk: #b8433a;
+  --color-chalk-soft: #e9c9c1;
+  --color-line: #1c191733;
+}
+
+html,
+body {
+  background: var(--color-paper);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+}
+
+h1,
+h2,
+h3,
+.font-display {
+  font-family: var(--font-display);
+}
+
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+::selection {
+  background: var(--color-wood-light);
+  color: var(--color-ink);
+}
+
+/* 墨糸(すみいと)のディバイダー: 墨壺で線を弾く所作をモチーフにした区切り線 */
+.sumi-line {
+  position: relative;
+  height: 2px;
+  background: linear-gradient(
+    to right,
+    var(--color-ink) 0%,
+    var(--color-ink) 92%,
+    transparent 92%
+  );
+}
+.sumi-line::before {
+  content: "";
+  position: absolute;
+  left: -3px;
+  top: 50%;
+  width: 8px;
+  height: 8px;
+  border-radius: 9999px;
+  background: var(--color-ink);
+  transform: translateY(-50%);
+}
+
+/* 数値表示用: 等幅で桁が揃うように */
+.tabular {
+  font-variant-numeric: tabular-nums;
+}
+
+/* フォーカスリング(キーボード操作の可視性確保) */
+:focus-visible {
+  outline: 2px solid var(--color-chalk);
+  outline-offset: 2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}

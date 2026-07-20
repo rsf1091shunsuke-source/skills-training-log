@@ -1,0 +1,36 @@
+rules_version = '2';
+
+// 方針:
+// - 読み取り: 誰でも可(選手が自分の記録を見られるようにするため。学内の練習記録という
+//   位置づけであり機微な情報は扱わない前提。もし限定したい場合はFirebase Authでの
+//   選手ログインに拡張してください)
+// - 書き込み: 管理者(Firebase Authでログイン済み)のみ許可
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    match /meta/{docId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+    }
+
+    match /years/{yearId} {
+      allow read: if true;
+      allow write: if request.auth != null;
+
+      match /participants/{participantId} {
+        allow read: if true;
+        allow write: if request.auth != null;
+
+        match /records/{recordId} {
+          allow read: if true;
+          allow write: if request.auth != null;
+        }
+
+        match /memos/{memoId} {
+          allow read: if true;
+          allow write: if request.auth != null;
+        }
+      }
+    }
+  }
+}
