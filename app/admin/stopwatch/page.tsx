@@ -38,14 +38,32 @@ export default function StopwatchPage() {
     lap,
     undoLap,
     setCurrentNote,
+    editSessionNote,
     resetOne,
+    resetAllRunning,
+    pauseAndSave,
     elapsedSeconds,
-    processSecondsFromTimer,
+    remainingDefs,
+    mergedProcessSeconds,
   } = useStopwatchTimers({ yearId, participants, processDefs, day, date });
 
   const doneCount = Object.values(timers).filter(
     (t) => t.status === "done"
   ).length;
+  const runningCount = Object.values(timers).filter(
+    (t) => t.status === "running"
+  ).length;
+
+  function handleStopAll() {
+    if (runningCount === 0) return;
+    if (
+      window.confirm(
+        `計測中の${runningCount}人分の未保存の計測を中止します。よろしいですか?(一時中断ではなく破棄です)`
+      )
+    ) {
+      resetAllRunning();
+    }
+  }
 
   if (!yearId) {
     return (
@@ -108,6 +126,13 @@ export default function StopwatchPage() {
           <Button variant="primary" onClick={startAll} className="font-bold">
             全員を一括スタート
           </Button>
+          <Button
+            variant="ghost"
+            onClick={handleStopAll}
+            disabled={runningCount === 0}
+          >
+            全員一括ストップ
+          </Button>
           <p className="text-xs text-ink-soft max-w-xs">
             ラップ順:「{processDefs.map((d) => d.label).join("→")}」
             <Link
@@ -118,7 +143,8 @@ export default function StopwatchPage() {
             </Link>
             <br />
             行にカーソルを合わせて <kbd className="border border-ink/30 rounded px-1">Enter</kbd> でラップ、
-            <kbd className="border border-ink/30 rounded px-1">Backspace</kbd> で取消も可能です。
+            <kbd className="border border-ink/30 rounded px-1">Backspace</kbd> で取消。
+            「中断」で続きを別の日に計測できます。
           </p>
         </div>
       )}
@@ -136,20 +162,23 @@ export default function StopwatchPage() {
               participant={p}
               timer={t}
               processDefs={processDefs}
+              remainingDefs={remainingDefs(t)}
               elapsed={elapsedSeconds(t)}
-              processSeconds={processSecondsFromTimer(t, processDefs)}
+              mergedProcessSeconds={mergedProcessSeconds(t)}
               onStart={() => startOne(p.id)}
               onLap={() => lap(p.id)}
               onUndo={() => undoLap(p.id)}
               onReset={() => resetOne(p.id)}
+              onPause={() => pauseAndSave(p.id)}
               onNoteChange={(note) => setCurrentNote(p.id, note)}
+              onEditSessionNote={(idx, note) => editSessionNote(p.id, idx, note)}
             />
           );
         })}
       </div>
 
       <p className="text-xs text-ink-soft mt-8 mb-16">
-        ※このページを閉じたり再読み込みすると、保存前の計測中データは失われます。全工程分のラップを押し終えると自動的に保存されます。
+        ※このページを閉じたり再読み込みすると、保存前(中断もしていない)の計測中データは失われます。全工程分のラップを押し終えると自動的に保存されます。
       </p>
     </div>
   );

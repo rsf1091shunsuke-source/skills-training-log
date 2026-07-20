@@ -5,6 +5,7 @@ import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { getYear, updateYearProcesses } from "@/lib/data";
 import { ProcessDef, YearDoc, genProcessId } from "@/lib/types";
+import { secondsToClock, clockToSeconds } from "@/lib/time";
 import SumiLine from "@/components/SumiLine";
 
 export default function ProcessesAdminPage() {
@@ -71,6 +72,12 @@ export default function ProcessesAdminPage() {
     save(next);
   }
 
+  function setTarget(index: number, seconds: number | undefined) {
+    const next = [...processes];
+    next[index] = { ...next[index], targetSeconds: seconds };
+    save(next);
+  }
+
   function add(e: React.FormEvent) {
     e.preventDefault();
     if (!newLabel.trim()) return;
@@ -108,10 +115,26 @@ export default function ProcessesAdminPage() {
         {processes.map((p, i) => (
           <li
             key={p.id}
-            className="flex items-center gap-3 border border-ink/15 bg-white/50 rounded px-4 py-3"
+            className="flex flex-wrap items-center gap-3 border border-ink/15 bg-white/50 rounded px-4 py-3"
           >
             <span className="text-xs text-ink-soft w-6 tabular">{i + 1}</span>
-            <span className="font-medium flex-1">{p.label}</span>
+            <span className="font-medium flex-1 min-w-[80px]">{p.label}</span>
+            <label className="flex items-center gap-1.5 text-xs text-ink-soft">
+              目標
+              <input
+                type="text"
+                inputMode="numeric"
+                placeholder="分:秒"
+                defaultValue={
+                  p.targetSeconds ? secondsToClock(p.targetSeconds) : ""
+                }
+                onBlur={(e) => {
+                  const v = e.target.value.trim();
+                  setTarget(i, v ? clockToSeconds(v) : undefined);
+                }}
+                className="border border-ink/20 rounded px-2 py-1 text-sm bg-white w-20 tabular"
+              />
+            </label>
             <div className="flex gap-1">
               <button
                 onClick={() => moveUp(i)}

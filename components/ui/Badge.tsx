@@ -3,7 +3,7 @@ type Tone = "neutral" | "active" | "pending" | "done";
 const TONE_CLASS: Record<Tone, string> = {
   neutral: "bg-ink/10 text-ink-soft",
   active: "bg-wood text-paper",
-  pending: "bg-chalk-soft text-chalk",
+  pending: "bg-amber-soft text-ink",
   done: "bg-ink text-paper",
 };
 

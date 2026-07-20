@@ -2,6 +2,7 @@
 export interface ProcessDef {
   id: string;
   label: string;
+  targetSeconds?: number; // 目標タイム(任意、管理者が設定)
 }
 
 export const DEFAULT_PROCESSES: ProcessDef[] = [
@@ -39,6 +40,16 @@ export interface PracticeRecord {
   deviationMm?: number | null; // 採点時の誤差(mm) 任意入力
   note?: string;
   createdAt: number;
+}
+
+// 1日目に途中まで計測し、2日目に続きから計測するための一時保存データ
+export interface InProgressRecord {
+  day: 1 | 2;
+  date: string; // 開始した日付
+  processes: ProcessSeconds; // ここまでに完了した工程の時間
+  processNotes?: Record<string, string>;
+  completedProcessIds: string[]; // 完了済み工程idの順序(再開時にどこからか判定するため)
+  updatedAt: number;
 }
 
 export interface Memo {

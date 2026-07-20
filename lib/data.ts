@@ -17,6 +17,7 @@ import {
   PracticeRecord,
   ProcessDef,
   YearDoc,
+  InProgressRecord,
   DEFAULT_PROCESSES,
   sumProcessSeconds,
 } from "./types";
@@ -169,6 +170,47 @@ export async function deleteRecord(
   await deleteDoc(
     doc(db, "years", yearId, "participants", participantId, "records", recordId)
   );
+}
+
+// ---------- 進行中の記録(1日目の途中から2日目に続きを計測) ----------
+
+function inProgressDoc(yearId: string, participantId: string) {
+  return doc(
+    db,
+    "years",
+    yearId,
+    "participants",
+    participantId,
+    "records",
+    "_inprogress"
+  );
+}
+
+export async function getInProgressRecord(
+  yearId: string,
+  participantId: string
+): Promise<InProgressRecord | null> {
+  const snap = await getDoc(inProgressDoc(yearId, participantId));
+  if (!snap.exists()) return null;
+  return snap.data() as InProgressRecord;
+}
+
+export async function saveInProgressRecord(
+  yearId: string,
+  participantId: string,
+  data: Omit<InProgressRecord, "updatedAt">
+): Promise<void> {
+  await setDoc(inProgressDoc(yearId, participantId), {
+    ...data,
+    updatedAt: Date.now(),
+  });
+}
+
+export async function clearInProgressRecord(
+  yearId: string,
+  participantId: string
+): Promise<void> {
+  await deleteDoc(inProgressDoc(yearId, participantId));
 }
 
 // ---------- メモ(良い点・気づき) ----------
