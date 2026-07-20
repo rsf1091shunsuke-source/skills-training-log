@@ -1,18 +1,12 @@
 import type { Metadata } from "next";
-import { Shippori_Mincho, Zen_Kaku_Gothic_New } from "next/font/google";
+import { Noto_Sans_JP } from "next/font/google";
 import "./globals.css";
 import { AuthProvider } from "@/lib/auth-context";
 
-const display = Shippori_Mincho({
-  subsets: ["latin"],
-  weight: ["500", "700"],
-  variable: "--font-display",
-});
-
-const body = Zen_Kaku_Gothic_New({
+const notoSansJP = Noto_Sans_JP({
   subsets: ["latin"],
   weight: ["400", "500", "700", "900"],
-  variable: "--font-body",
+  variable: "--font-noto",
 });
 
 export const metadata: Metadata = {
@@ -27,7 +21,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ja">
-      <body className={`${display.variable} ${body.variable}`}>
+      <body className={notoSansJP.variable}>
         <AuthProvider>{children}</AuthProvider>
       </body>
     </html>

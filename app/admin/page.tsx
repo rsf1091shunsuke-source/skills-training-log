@@ -132,7 +132,7 @@ export default function AdminHome() {
         <div className="flex flex-wrap gap-3 mb-8">
           <Link
             href={`/admin/stopwatch?year=${currentYearId}`}
-            className="inline-block px-4 py-2 rounded text-sm bg-chalk text-paper hover:bg-ink transition-colors font-bold"
+            className="inline-block px-4 py-2 rounded text-sm bg-wood text-paper hover:bg-wood-dark transition-colors font-bold"
           >
             ⏱ 一括ストップウォッチ計測を開く
           </Link>

@@ -105,11 +105,7 @@ export default function StopwatchPage() {
               className="border border-ink/20 rounded px-2 py-1.5 text-sm bg-white"
             />
           </label>
-          <Button
-            variant="secondary"
-            onClick={startAll}
-            className="!bg-chalk hover:!bg-ink font-bold"
-          >
+          <Button variant="primary" onClick={startAll} className="font-bold">
             全員を一括スタート
           </Button>
           <p className="text-xs text-ink-soft max-w-xs">
