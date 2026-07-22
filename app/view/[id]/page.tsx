@@ -9,11 +9,13 @@ import {
   PracticeRecord,
   ProcessDef,
   YearDoc,
+  noteList,
 } from "@/lib/types";
 import { secondsToClock } from "@/lib/time";
 import Header from "@/components/Header";
 import SumiLine from "@/components/SumiLine";
-import ProcessBarChart from "@/components/ProcessBarChart";
+import ProcessRadarChart from "@/components/ProcessRadarChart";
+import Link from "next/link";
 
 export default function ViewPage() {
   const { id } = useParams<{ id: string }>();
@@ -62,7 +64,11 @@ export default function ViewPage() {
             <SumiLine
               label={`直近の記録(${latest.date}・${latest.day}日目)`}
             />
-            <ProcessBarChart processDefs={processDefs} processes={latest.processes} />
+            <ProcessRadarChart
+              processDefs={processDefs}
+              processes={latest.processes}
+              color={participant?.color}
+            />
             <p className="text-sm text-ink-soft mt-2">
               合計{" "}
               <span className="tabular font-bold text-ink">
@@ -77,6 +83,12 @@ export default function ViewPage() {
                 </>
               )}
             </p>
+            <Link
+              href={`/ranking?year=${yearId}`}
+              className="inline-block mt-3 text-xs text-wood underline decoration-2 underline-offset-4"
+            >
+              みんなのランキングを見る →
+            </Link>
           </>
         )}
 
@@ -105,9 +117,9 @@ export default function ViewPage() {
                       {processDefs.map((def) => (
                         <td key={def.id} className="py-2 pr-3 text-right tabular">
                           {secondsToClock(r.processes[def.id] || 0)}
-                          {r.processNotes?.[def.id] && (
+                          {noteList(r.processNotes?.[def.id]).length > 0 && (
                             <span className="block text-xs text-ink-soft text-right font-normal">
-                              {r.processNotes[def.id]}
+                              {noteList(r.processNotes?.[def.id]).join(" / ")}
                             </span>
                           )}
                         </td>

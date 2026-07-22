@@ -144,7 +144,7 @@ export default function Home() {
                     href={`/view/${p.id}?year=${yearId}`}
                     className="flex items-center gap-3 px-4 py-3.5"
                   >
-                    <Avatar name={p.name} />
+                    <Avatar name={p.name} color={p.color} />
                     <span className="font-medium text-ink flex-1 truncate">
                       {p.name}
                     </span>
@@ -156,6 +156,17 @@ export default function Home() {
               ))}
           </ul>
         </section>
+
+        {yearId && (
+          <div className="mt-6">
+            <Link
+              href={`/ranking?year=${yearId}`}
+              className="text-sm text-wood hover:text-wood-dark transition-colors"
+            >
+              🏆 工程別ランキングを見る →
+            </Link>
+          </div>
+        )}
 
         {/* ── Supporting: 指導者ログイン(毎日は使わない導線) ── */}
         <div className="mt-16 pt-6 border-t border-ink/8">

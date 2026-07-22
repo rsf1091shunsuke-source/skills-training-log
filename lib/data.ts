@@ -110,11 +110,13 @@ export async function getParticipant(
 export async function addParticipant(
   yearId: string,
   name: string,
-  order: number
+  order: number,
+  color?: string
 ): Promise<string> {
   const ref = await addDoc(participantsCol(yearId), {
     name,
     order,
+    ...(color ? { color } : {}),
     createdAt: Date.now(),
   });
   return ref.id;
@@ -123,7 +125,7 @@ export async function addParticipant(
 export async function updateParticipant(
   yearId: string,
   participantId: string,
-  data: Partial<Pick<Participant, "name" | "order">>
+  data: Partial<Pick<Participant, "name" | "order" | "color">>
 ): Promise<void> {
   await updateDoc(doc(db, "years", yearId, "participants", participantId), data);
 }
@@ -142,7 +144,7 @@ export async function copyParticipantsFromYear(
 ): Promise<number> {
   const source = await listParticipants(fromYearId);
   for (const p of source) {
-    await addParticipant(toYearId, p.name, p.order);
+    await addParticipant(toYearId, p.name, p.order, p.color);
   }
   return source.length;
 }

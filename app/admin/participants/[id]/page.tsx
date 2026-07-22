@@ -22,6 +22,7 @@ import {
   YearDoc,
   emptyProcessSeconds,
   sumProcessSeconds,
+  noteList,
 } from "@/lib/types";
 import { secondsToClock } from "@/lib/time";
 import TimeInput from "@/components/TimeInput";
@@ -41,7 +42,7 @@ export default function ParticipantAdminPage() {
   const processDefs: ProcessDef[] = year?.processes ?? [];
 
   // 記録入力フォームの状態
-  const [day, setDay] = useState<1 | 2>(1);
+  const [day, setDay] = useState<number>(1);
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [processes, setProcesses] = useState<ProcessSeconds>({});
   const [deviationMm, setDeviationMm] = useState("");
@@ -154,15 +155,14 @@ export default function ParticipantAdminPage() {
       >
         <div className="flex flex-wrap gap-4 items-end">
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-ink-soft">区分</span>
-            <select
+            <span className="text-xs text-ink-soft">◯日目</span>
+            <input
+              type="number"
+              min={1}
               value={day}
-              onChange={(e) => setDay(Number(e.target.value) as 1 | 2)}
-              className="border border-ink/20 rounded px-2 py-1.5 text-sm bg-white"
-            >
-              <option value={1}>1日目</option>
-              <option value={2}>2日目</option>
-            </select>
+              onChange={(e) => setDay(Math.max(1, Number(e.target.value) || 1))}
+              className="border border-ink/20 rounded px-2 py-1.5 text-sm bg-white w-16 tabular"
+            />
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-xs text-ink-soft">実施日</span>
@@ -261,9 +261,9 @@ export default function ParticipantAdminPage() {
                 {processDefs.map((def) => (
                   <td key={def.id} className="py-2 pr-3 text-right tabular">
                     {secondsToClock(r.processes[def.id] || 0)}
-                    {r.processNotes?.[def.id] && (
+                    {noteList(r.processNotes?.[def.id]).length > 0 && (
                       <span className="block text-xs text-ink-soft text-right font-normal">
-                        {r.processNotes[def.id]}
+                        {noteList(r.processNotes?.[def.id]).join(" / ")}
                       </span>
                     )}
                   </td>

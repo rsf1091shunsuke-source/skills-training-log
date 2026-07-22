@@ -24,18 +24,30 @@ export interface Participant {
   id: string;
   name: string;
   order: number;
+  color?: string; // 一覧・ランキングでの表示色(任意)
   createdAt: number;
 }
+
+export const PARTICIPANT_COLORS = [
+  "#ff3b30", // red
+  "#0071e3", // blue
+  "#34c759", // green
+  "#ff9500", // orange
+  "#af52de", // purple
+  "#00c7be", // teal
+  "#ff2d55", // pink
+  "#8e8e93", // gray
+];
 
 // キーは ProcessDef.id
 export type ProcessSeconds = Record<string, number>;
 
 export interface PracticeRecord {
   id: string;
-  day: 1 | 2;
+  day: number; // 大会の日数に限らず、通し練習の回数として自由に使えるように
   date: string; // YYYY-MM-DD
   processes: ProcessSeconds;
-  processNotes?: Record<string, string>; // 工程ごとのメモ(ストップウォッチのラップ時に記入)
+  processNotes?: Record<string, string[]>; // 工程ごとのメモ(複数可・ストップウォッチのラップ時に記入)
   totalSeconds: number;
   deviationMm?: number | null; // 採点時の誤差(mm) 任意入力
   note?: string;
@@ -44,12 +56,18 @@ export interface PracticeRecord {
 
 // 1日目に途中まで計測し、2日目に続きから計測するための一時保存データ
 export interface InProgressRecord {
-  day: 1 | 2;
+  day: number;
   date: string; // 開始した日付
   processes: ProcessSeconds; // ここまでに完了した工程の時間
-  processNotes?: Record<string, string>;
+  processNotes?: Record<string, string[]>;
   completedProcessIds: string[]; // 完了済み工程idの順序(再開時にどこからか判定するため)
   updatedAt: number;
+}
+
+// 保存済みのメモは旧仕様(文字列1件)の場合もあるため、常に配列として扱うためのヘルパー
+export function noteList(value: string | string[] | undefined): string[] {
+  if (!value) return [];
+  return Array.isArray(value) ? value : [value];
 }
 
 export interface Memo {

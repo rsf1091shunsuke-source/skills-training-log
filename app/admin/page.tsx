@@ -14,7 +14,7 @@ import {
   setCurrentYearId,
   updateParticipant,
 } from "@/lib/data";
-import { Participant, YearDoc } from "@/lib/types";
+import { Participant, YearDoc, PARTICIPANT_COLORS } from "@/lib/types";
 import SumiLine from "@/components/SumiLine";
 
 export default function AdminHome() {
@@ -112,6 +112,11 @@ export default function AdminHome() {
     const name = window.prompt("選手名を編集", p.name);
     if (!name || name === p.name) return;
     await updateParticipant(currentYearId, p.id, { name });
+    await reloadParticipants(currentYearId);
+  }
+
+  async function handleSetColor(p: Participant, color: string) {
+    await updateParticipant(currentYearId, p.id, { color });
     await reloadParticipants(currentYearId);
   }
 
@@ -272,15 +277,30 @@ export default function AdminHome() {
         {participants.map((p) => (
           <li
             key={p.id}
-            className="flex items-center justify-between border border-ink/15 bg-white/50 rounded px-4 py-3"
+            className="flex items-center justify-between border border-ink/15 bg-white/50 rounded px-4 py-3 gap-3"
           >
+            <span className="flex items-center gap-1 shrink-0">
+              {PARTICIPANT_COLORS.map((c) => (
+                <button
+                  key={c}
+                  onClick={() => handleSetColor(p, c)}
+                  aria-label={`${p.name}の色を${c}にする`}
+                  className="w-4 h-4 rounded-full border"
+                  style={{
+                    background: c,
+                    borderColor: p.color === c ? "#1d1d1f" : "transparent",
+                    borderWidth: p.color === c ? 2 : 1,
+                  }}
+                />
+              ))}
+            </span>
             <Link
               href={`/admin/participants/${p.id}?year=${currentYearId}`}
               className="font-medium hover:text-wood-dark flex-1"
             >
               {p.name}
             </Link>
-            <div className="flex gap-3 text-sm">
+            <div className="flex gap-3 text-sm shrink-0">
               <button
                 onClick={() => handleRename(p)}
                 className="text-ink-soft hover:text-ink underline decoration-wood/50 underline-offset-4"

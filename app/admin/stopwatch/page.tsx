@@ -16,7 +16,7 @@ export default function StopwatchPage() {
 
   const [year, setYear] = useState<YearDoc | null>(null);
   const [participants, setParticipants] = useState<Participant[]>([]);
-  const [day, setDay] = useState<1 | 2>(1);
+  const [day, setDay] = useState<number>(1);
   const [date, setDate] = useState(() => new Date().toISOString().slice(0, 10));
 
   const processDefs: ProcessDef[] = year?.processes ?? [];
@@ -37,8 +37,11 @@ export default function StopwatchPage() {
     startOne,
     lap,
     undoLap,
-    setCurrentNote,
-    editSessionNote,
+    setCurrentNoteDraft,
+    addCurrentNote,
+    removeCurrentNote,
+    addSessionNote,
+    removeSessionNote,
     resetOne,
     resetAllRunning,
     pauseAndSave,
@@ -104,15 +107,14 @@ export default function StopwatchPage() {
       ) : (
         <div className="flex flex-wrap items-end gap-4 mb-6 border border-ink/15 bg-white/50 rounded-lg p-4">
           <label className="flex flex-col gap-1">
-            <span className="text-xs text-ink-soft">区分</span>
-            <select
+            <span className="text-xs text-ink-soft">◯日目</span>
+            <input
+              type="number"
+              min={1}
               value={day}
-              onChange={(e) => setDay(Number(e.target.value) as 1 | 2)}
-              className="border border-ink/20 rounded px-2 py-1.5 text-sm bg-white"
-            >
-              <option value={1}>1日目</option>
-              <option value={2}>2日目</option>
-            </select>
+              onChange={(e) => setDay(Math.max(1, Number(e.target.value) || 1))}
+              className="border border-ink/20 rounded px-2 py-1.5 text-sm bg-white w-16 tabular"
+            />
           </label>
           <label className="flex flex-col gap-1">
             <span className="text-xs text-ink-soft">実施日</span>
@@ -170,8 +172,13 @@ export default function StopwatchPage() {
               onUndo={() => undoLap(p.id)}
               onReset={() => resetOne(p.id)}
               onPause={() => pauseAndSave(p.id)}
-              onNoteChange={(note) => setCurrentNote(p.id, note)}
-              onEditSessionNote={(idx, note) => editSessionNote(p.id, idx, note)}
+              onNoteDraftChange={(note) => setCurrentNoteDraft(p.id, note)}
+              onAddCurrentNote={() => addCurrentNote(p.id)}
+              onRemoveCurrentNote={(idx) => removeCurrentNote(p.id, idx)}
+              onAddSessionNote={(pIdx, note) => addSessionNote(p.id, pIdx, note)}
+              onRemoveSessionNote={(pIdx, nIdx) =>
+                removeSessionNote(p.id, pIdx, nIdx)
+              }
             />
           );
         })}

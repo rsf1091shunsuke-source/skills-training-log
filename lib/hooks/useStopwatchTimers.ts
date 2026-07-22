@@ -12,10 +12,10 @@ import { Participant, ProcessDef, ProcessSeconds } from "@/lib/types";
 export type TimerStatus = "idle" | "running" | "saving" | "done";
 
 export interface CarriedProgress {
-  day: 1 | 2;
+  day: number;
   date: string;
   processes: ProcessSeconds;
-  notes: Record<string, string>;
+  notes: Record<string, string[]>;
   completedCount: number; // 前回までに完了した工程数(先頭からの連続分)
 }
 
@@ -23,8 +23,9 @@ export interface TimerState {
   status: TimerStatus;
   startedAt: number | null;
   lapTimestamps: number[]; // 今回のセッションで完了した工程の時刻
-  lapNotes: string[]; // 今回のセッション分のメモ(lapTimestampsと同じ長さ)
-  currentNote: string;
+  lapNotes: string[][]; // 今回のセッション分のメモ(工程ごとに複数)。lapTimestampsと同じ長さ
+  currentNotes: string[]; // 計測中の工程について、これまでに追加したメモ
+  currentNoteDraft: string; // 入力中(まだ追加していない)のメモ
   carried: CarriedProgress | null; // 前回(別の日)までの進行状況
 }
 
@@ -34,7 +35,8 @@ function initialTimer(carried: CarriedProgress | null = null): TimerState {
     startedAt: null,
     lapTimestamps: [],
     lapNotes: [],
-    currentNote: "",
+    currentNotes: [],
+    currentNoteDraft: "",
     carried,
   };
 }
@@ -61,13 +63,17 @@ function sessionProcessSeconds(
   return result;
 }
 
-function sessionProcessNotes(t: TimerState, processDefs: ProcessDef[]) {
+function sessionProcessNotes(
+  t: TimerState,
+  processDefs: ProcessDef[]
+): Record<string, string[]> {
   const defs = remainingDefs(t, processDefs);
-  const result: Record<string, string> = {};
-  t.lapNotes.forEach((note, i) => {
+  const result: Record<string, string[]> = {};
+  t.lapNotes.forEach((notes, i) => {
     const def = defs[i];
-    if (!def || !note.trim()) return;
-    result[def.id] = note.trim();
+    const cleaned = notes.map((n) => n.trim()).filter(Boolean);
+    if (!def || cleaned.length === 0) return;
+    result[def.id] = cleaned;
   });
   return result;
 }
@@ -80,7 +86,10 @@ function mergedProcessSeconds(
   return { ...(t.carried?.processes ?? {}), ...sessionProcessSeconds(t, processDefs) };
 }
 
-function mergedProcessNotes(t: TimerState, processDefs: ProcessDef[]) {
+function mergedProcessNotes(
+  t: TimerState,
+  processDefs: ProcessDef[]
+): Record<string, string[]> {
   return { ...(t.carried?.notes ?? {}), ...sessionProcessNotes(t, processDefs) };
 }
 
@@ -94,7 +103,7 @@ export function useStopwatchTimers({
   yearId: string;
   participants: Participant[];
   processDefs: ProcessDef[];
-  day: 1 | 2;
+  day: number;
   date: string;
 }) {
   const [timers, setTimers] = useState<Record<string, TimerState>>({});
@@ -160,7 +169,8 @@ export function useStopwatchTimers({
             startedAt: now,
             lapTimestamps: [],
             lapNotes: [],
-            currentNote: "",
+            currentNotes: [],
+            currentNoteDraft: "",
           };
         }
       });
@@ -179,7 +189,8 @@ export function useStopwatchTimers({
           startedAt: Date.now(),
           lapTimestamps: [],
           lapNotes: [],
-          currentNote: "",
+          currentNotes: [],
+          currentNoteDraft: "",
         },
       };
     });
@@ -191,7 +202,10 @@ export function useStopwatchTimers({
       if (!t || t.status !== "running") return prev;
       const defs = remainingDefs(t, processDefs);
       const lapTimestamps = [...t.lapTimestamps, Date.now()];
-      const lapNotes = [...t.lapNotes, t.currentNote];
+      const finalNotes = t.currentNoteDraft.trim()
+        ? [...t.currentNotes, t.currentNoteDraft.trim()]
+        : t.currentNotes;
+      const lapNotes = [...t.lapNotes, finalNotes];
       const done = lapTimestamps.length >= defs.length;
       return {
         ...prev,
@@ -199,7 +213,8 @@ export function useStopwatchTimers({
           ...t,
           lapTimestamps,
           lapNotes,
-          currentNote: "",
+          currentNotes: [],
+          currentNoteDraft: "",
           status: done ? "saving" : "running",
         },
       };
@@ -210,37 +225,83 @@ export function useStopwatchTimers({
     setTimers((prev) => {
       const t = prev[id];
       if (!t || t.lapTimestamps.length === 0) return prev;
-      const restoredNote = t.lapNotes[t.lapNotes.length - 1] ?? "";
+      const restoredNotes = t.lapNotes[t.lapNotes.length - 1] ?? [];
       return {
         ...prev,
         [id]: {
           ...t,
           lapTimestamps: t.lapTimestamps.slice(0, -1),
           lapNotes: t.lapNotes.slice(0, -1),
-          currentNote: restoredNote,
+          currentNotes: restoredNotes,
+          currentNoteDraft: "",
           status: "running",
         },
       };
     });
   }
 
-  function setCurrentNote(id: string, note: string) {
+  function setCurrentNoteDraft(id: string, draft: string) {
     setTimers((prev) => {
       const t = prev[id];
       if (!t) return prev;
-      return { ...prev, [id]: { ...t, currentNote: note } };
+      return { ...prev, [id]: { ...t, currentNoteDraft: draft } };
     });
   }
 
-  // 完了済み(今回のセッション分)のメモを後から編集する
-  function editSessionNote(id: string, index: number, note: string) {
+  // 計測中の工程に、メモをもう1件追加する
+  function addCurrentNote(id: string) {
     setTimers((prev) => {
       const t = prev[id];
-      if (!t || !t.lapNotes[index]) {
-        if (!t) return prev;
-      }
-      const lapNotes = [...t.lapNotes];
-      lapNotes[index] = note;
+      if (!t || !t.currentNoteDraft.trim()) return prev;
+      return {
+        ...prev,
+        [id]: {
+          ...t,
+          currentNotes: [...t.currentNotes, t.currentNoteDraft.trim()],
+          currentNoteDraft: "",
+        },
+      };
+    });
+  }
+
+  function removeCurrentNote(id: string, index: number) {
+    setTimers((prev) => {
+      const t = prev[id];
+      if (!t) return prev;
+      return {
+        ...prev,
+        [id]: {
+          ...t,
+          currentNotes: t.currentNotes.filter((_, i) => i !== index),
+        },
+      };
+    });
+  }
+
+  // 今回のセッションで完了した工程に、メモを後から追加/削除する
+  function addSessionNote(id: string, processIndex: number, note: string) {
+    if (!note.trim()) return;
+    setTimers((prev) => {
+      const t = prev[id];
+      if (!t) return prev;
+      const lapNotes = t.lapNotes.map((notes, i) =>
+        i === processIndex ? [...notes, note.trim()] : notes
+      );
+      return { ...prev, [id]: { ...t, lapNotes } };
+    });
+  }
+
+  function removeSessionNote(
+    id: string,
+    processIndex: number,
+    noteIndex: number
+  ) {
+    setTimers((prev) => {
+      const t = prev[id];
+      if (!t) return prev;
+      const lapNotes = t.lapNotes.map((notes, i) =>
+        i === processIndex ? notes.filter((_, ni) => ni !== noteIndex) : notes
+      );
       return { ...prev, [id]: { ...t, lapNotes } };
     });
   }
@@ -349,8 +410,11 @@ export function useStopwatchTimers({
     startOne,
     lap,
     undoLap,
-    setCurrentNote,
-    editSessionNote,
+    setCurrentNoteDraft,
+    addCurrentNote,
+    removeCurrentNote,
+    addSessionNote,
+    removeSessionNote,
     resetOne,
     resetAllRunning,
     pauseAndSave,
